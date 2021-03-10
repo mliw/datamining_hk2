@@ -591,7 +591,7 @@ The best model is the best model with the highest f1-score.
 \newpage
 \subsection{Model validation: step 1}
 
-\textbf{(Q4\_2)Produce an ROC curve for your best model, using the data in hotels_val: that is, plot TPR(t) versus FPR(t) as you vary the classification threshold t.}
+\textbf{(Q4\_2)Produce an ROC curve for your best model, using the data in hotels\_val: that is, plot TPR(t) versus FPR(t) as you vary the classification threshold t.}
 
 We first fit on the hotelsdev data. Then we load hotels_val to conduct validation and draw ROC graph.
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
