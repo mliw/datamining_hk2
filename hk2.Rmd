@@ -24,12 +24,11 @@ This document is the second homework of ECO395M STAT LEARNING.
 
 \newpage
 \section{Problem 1: visualization}
-\subsection{line graphs}
 ```{r,echo=FALSE,message=FALSE}
 # Load the data and package
 library(ggplot2)
 library(tidyverse)
-capmetro = read.csv("data/capmetro.csv")
+capmetro = read.csv("data/capmetro_UT.csv")
 ```
 ```{r,echo=FALSE,message=FALSE}
 # Extract the month and year
@@ -51,35 +50,38 @@ logi = capmetro$month>=9 &  capmetro$month<=11
 data = capmetro[logi,]
 ```
 
-We summarize the data and calculate average boardings
+We first load capmetro_UT.csv and calculate average boardings grouped by
+hour,day_of_week and month.
 ```{r,echo=FALSE,message=FALSE}
 # Calculate average boardings
 data_summary = data %>%
-  group_by(hour,month,day) %>%
+  group_by(hour,day_of_week,month) %>%
   summarize(mean_boarding=mean(boarding))
-print(data_summary[1:18,])
+print(data_summary[1:5,])
 ```
 
 \newpage
-The faceted line plot is as follows.
+\subsection{line graphs}
+\textbf{(Q1\_1\_1) One panel of line graphs that plots average boardings grouped by hour of the day, day of week, and month. You should facet by day of week. Each facet should include three lines, one for each month, colored differently and with colors labeled with a legend. Give the figure an informative caption in which you explain what is shown in the figure}
+
 ```{r fig1,echo=FALSE,message=FALSE,fig.width=7.5,fig.height=9,fig.align = "center"}
 data_summary$month = factor(data_summary$month)
-p0 = ggplot(data=data_summary,aes(x=hour,y=mean_boarding,group=month,color=month))+ geom_line()+facet_wrap(~day, nrow=4)+ggtitle("Mean Boarding in different time intervals")+theme(plot.title = element_text(hjust = 0.5))
+p0 = ggplot(data=data_summary,aes(x=hour,y=mean_boarding,group=month,color=month))+ geom_line()+facet_wrap(~day_of_week, nrow=4)+ggtitle("Mean Boarding in different time intervals")+theme(plot.title = element_text(hjust = 0.5))
 p0
 ```
 
 \newpage
-\textbf{(Q1\_1\_1) Does the hour of peak boardings change from day to day, or is it broadly similar across days?}
+\textbf{(Q1\_1\_2) Does the hour of peak boardings change from day to day, or is it broadly similar across days?}
 
-Based on the figure, It is broadly similar across days. At about hour 15.
+Based on the figure, It is broadly similar across days. At about hour 15 or 16.
 
 \vspace{12pt}
-\textbf{(Q1\_1\_2) Why do you think average boardings on Mondays in September look lower, compared to other days and months?}
+\textbf{(Q1\_1\_3) Why do you think average boardings on Mondays in September look lower, compared to other days and months?}
 
 September is the beginning of Fall semester, which means there is less people on campus. On Monday, perhaps there is less courses than other days.
 
 \vspace{12pt}
-\textbf{(Q1\_1\_3) Similarly, why do you think average boardings on Weds/Thurs/Fri in November look lower?}
+\textbf{(Q1\_1\_4) Similarly, why do you think average boardings on Weds/Thurs/Fri in November look lower?}
 
 There are many midterm exams in November, which means students stay in the dorm to study for the exams without having to go outside.
 
@@ -88,7 +90,7 @@ There are many midterm exams in November, which means students stay in the dorm 
 ```{r,echo=FALSE,message=FALSE}
 #We first desigin indicator for weekdays/weekend.
 # is_weekend 1 if it's a weekend
-data$is_weekend = as.numeric(data$day=="Saturday" | data$day=="Sunday")
+data$is_weekend = as.numeric(data$weekend=="weekend")
 transform_func = function(num){
   if (num==1){
     return("weekend")
@@ -99,8 +101,8 @@ transform_func = function(num){
 }
 data$is_weekend_indicator = apply(array(data$is_weekend),1,transform_func)
 ```
+\textbf{(Q1\_2\_1) One panel of scatter plots showing boardings (y) vs. temperature (x) in each 15-minute window, faceted by hour of the day, and with points colored in according to whether it is a weekday or weekend. Give the figure an informative caption in which you explain what is shown in the figure.}
 
-The figure is as follows.
 ```{r fig2,echo=FALSE,message=FALSE,fig.width=7.5,fig.height=8,fig.align = "center"}
 p0 = ggplot(data=data,aes(x=temperature,y=boarding,color=is_weekend_indicator))+
 geom_point(alpha=0.3)+facet_wrap(~hour, nrow=4)+
@@ -110,7 +112,7 @@ p0
 ```
 
 \newpage
-\textbf{(Q1\_2\_1) When we hold hour of day and weekend status constant, does temperature seem to have a noticeable effect on the number of UT students riding the bus?}
+\textbf{(Q1\_2\_2) When we hold hour of day and weekend status constant, does temperature seem to have a noticeable effect on the number of UT students riding the bus?}
 
 Just from the plot above, temperature doesn't have a noticeable effect on the number of UT students riding the bus.
 
@@ -118,6 +120,9 @@ Just from the plot above, temperature doesn't have a noticeable effect on the nu
 \newpage
 \section{Problem 2: Saratoga house prices}
 \subsection{The Best Linear Model}
+
+\textbf{(Q2\_1) Build the best linear model for price that you can. It should clearly outperform the "medium" model that we considered in class. Use any combination of transformations, engineering features, polynomial terms, and interactions that you want; and use any strategy for selecting the model that you want.}
+
 ```{r,echo=FALSE,message=FALSE}
 #We first load data.
 library(tidyverse)
@@ -126,9 +131,6 @@ library(rsample)
 library(mosaic)
 library(ModelMetrics)
 data(SaratogaHouses)
-```
-The average of 5-fold corss-validation Rmse is used to evaluate a certain model.
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
 # Metric definition(Use a number to evaluate the performance of a certain model),rmse is adopted.
 library(caret)
 evaluate_func = function(my_str,data){
@@ -149,70 +151,72 @@ middle_str = "price ~ lotSize + age + livingArea + bedrooms +
 fireplaces + bathrooms + rooms + heating + fuel + centralAir"
 #print(evaluate_func(middle_str,SaratogaHouses))
 ```
-
-The cross-validation Rmse of middle model is 65989.29. Our target is very simple, to find a model with cross-validation rmse lower than 65989.29. A greedy algorithm is used for feature selection, and the results are as follows.
+The average of 5-fold corss-validation Rmse is used to evaluate a certain model. The cross-validation Rmse of middle model is 65989.29. Our target is very simple, to find a model with cross-validation rmse lower than 65989.29. A greedy algorithm is used for feature selection, and the result is as follows.
 ```{r,echo=FALSE,message=FALSE}
-x_names = colnames(SaratogaHouses)[2:length(colnames(SaratogaHouses))]
-y_name = "price"
-count = 0
-rmse_record = Inf
-best_name = ""
-best_test_str = ""
-best_record_previous = Inf
-result_collect = c()
-
-while(TRUE){
-  for (name in x_names){
-    if (count == 0){
-     test_str = paste(y_name,"~",name,sep="")
-    }
-    else{
-     test_str = paste(y_name,"+",name,sep="")
-    }
-    err = evaluate_func(test_str,SaratogaHouses)
-    if (err<rmse_record){
-      rmse_record = err
-      best_name = name
-      best_test_str = test_str
-    }
-  }
-  if (rmse_record<best_record_previous){
-    best_record_previous = rmse_record
-  }
-  else{
-    break
-  }
-  y_name = best_test_str
-  result_collect = c(result_collect,c(y_name,rmse_record))
-  count = count + 1
-  x_names = setdiff(x_names,best_name)
-  if (length(x_names)==0){
-    break
-  }
-}
-print(result_collect)
+# x_names = colnames(SaratogaHouses)[2:length(colnames(SaratogaHouses))]
+# y_name = "price"
+# count = 0
+# rmse_record = Inf
+# best_name = ""
+# best_test_str = ""
+# best_record_previous = Inf
+# result_collect = c()
+#
+# while(TRUE){
+#   for (name in x_names){
+#     if (count == 0){
+#      test_str = paste(y_name,"~",name,sep="")
+#     }
+#     else{
+#      test_str = paste(y_name,"+",name,sep="")
+#     }
+#     err = evaluate_func(test_str,SaratogaHouses)
+#     if (err<rmse_record){
+#       rmse_record = err
+#       best_name = name
+#       best_test_str = test_str
+#     }
+#   }
+#   if (rmse_record<best_record_previous){
+#     best_record_previous = rmse_record
+#   }
+#   else{
+#     break
+#   }
+#   y_name = best_test_str
+#   result_collect = c(result_collect,c(y_name,rmse_record))
+#   count = count + 1
+#   x_names = setdiff(x_names,best_name)
+#   if (length(x_names)==0){
+#     break
+#   }
+# }
+# print(result_collect)
 ```
 ```{r,echo=FALSE,message=FALSE}
 best_str = "price~livingArea+landValue+bathrooms+waterfront+newConstruction+
 heating+lotSize+centralAir+age+rooms+bedrooms+fuel+pctCollege+sewer+fireplaces"
-print(evaluate_func(best_str,SaratogaHouses))
 ```
 
-The best variables are:
+The best variables are(with cross-validation error of 57828.05):
 ```{r,echo=TRUE,message=FALSE}
 # "price~livingArea+landValue+bathrooms+waterfront+newConstruction+
 # heating+lotSize+centralAir+age+rooms+bedrooms+fuel+pctCollege+sewer+fireplaces"
 # Error:57828.05
 ```
 
-Corresponding cross-validation error is 57828.05, lower than 65989.29 from the medium model.
-
-In all, we successfully overperform the medium model!.
+Corresponding cross-validation error is 57828.05, lower than 65989.29 from the medium model. The summary is as follows.
+```{r,echo=FALSE,message=FALSE}
+lm_model = lm(as.formula(best_str), data=SaratogaHouses)
+summary(lm_model)
+```
+In all, we successfully overperform the medium model!
 
 \newpage
 \subsection{The Best KNN}
 
-Package kknn is used, and we slightly modify the evaluation function.
+\textbf{(Q2\_2) Now build the best K-nearest-neighbor regression model for price that you can. Note: you still need to choose which features should go into a KNN model, but you don't explicitly include interactions or polynomial terms. The method is sufficiently adaptable to find interactions and nonlinearities, if they are there. But do make sure to standardize your variables before applying KNN, or at least do something that accounts for the large differences in scale across the different variables here.}
+
 ```{r,echo=FALSE,message=FALSE}
 library(kknn)
 knn_evaluate_func = function(my_str,data){
@@ -232,51 +236,64 @@ knn_evaluate_func = function(my_str,data){
 }
 ```
 
-Greedy algorithm is adopted again to select the best feature combination, the results are as follows.
 ```{r,echo=FALSE,message=FALSE}
-x_names = colnames(SaratogaHouses)[2:length(colnames(SaratogaHouses))]
-y_name = "price"
-count = 0
-rmse_record = Inf
-best_name = ""
-best_test_str = ""
-best_record_previous = Inf
-result_collect = c()
-
-while(TRUE){
-  for (name in x_names){
-    if (count == 0){
-     test_str = paste(y_name,"~",name,sep="")
-    }
-    else{
-     test_str = paste(y_name,"+",name,sep="")
-    }
-    err = knn_evaluate_func(test_str,SaratogaHouses)
-    if (err<rmse_record){
-      rmse_record = err
-      best_name = name
-      best_test_str = test_str
-    }
-  }
-  if (rmse_record<best_record_previous){
-    best_record_previous = rmse_record
-  }
-  else{
-    break
-  }
-  y_name = best_test_str
-  result_collect = c(result_collect,c(y_name,rmse_record))
-  count = count + 1
-  x_names = setdiff(x_names,best_name)
-  if (length(x_names)==0){
-    break
-  }
-}
-print(result_collect)
+# x_names = colnames(SaratogaHouses)[2:length(colnames(SaratogaHouses))]
+# y_name = "price"
+# count = 0
+# rmse_record = Inf
+# best_name = ""
+# best_test_str = ""
+# best_record_previous = Inf
+# result_collect = c()
+#
+# while(TRUE){
+#   for (name in x_names){
+#     if (count == 0){
+#      test_str = paste(y_name,"~",name,sep="")
+#     }
+#     else{
+#      test_str = paste(y_name,"+",name,sep="")
+#     }
+#     err = knn_evaluate_func(test_str,SaratogaHouses)
+#     if (err<rmse_record){
+#       rmse_record = err
+#       best_name = name
+#       best_test_str = test_str
+#     }
+#   }
+#   if (rmse_record<best_record_previous){
+#     best_record_previous = rmse_record
+#   }
+#   else{
+#     break
+#   }
+#   y_name = best_test_str
+#   result_collect = c(result_collect,c(y_name,rmse_record))
+#   count = count + 1
+#   x_names = setdiff(x_names,best_name)
+#   if (length(x_names)==0){
+#     break
+#   }
+# }
+# print(result_collect)
+best_str = "price~livingArea+landValue+age+pctCollege+waterfront+newConstruction"
 ```
+Package kknn is used, and we slightly modify the evaluation function. Greedy algorithm is adopted again to select the best feature combination, the results are as follows. The best variables and cross-validation error for KNN is as follows
+```{r,echo=TRUE,message=FALSE}
+# "price~livingArea+landValue+age+pctCollege+waterfront+newConstruction"
+# 58061.7316651973
+```
+The summary of KNN is:
+```{r,echo=FALSE,message=FALSE}
+model = train.kknn(as.formula(best_str),SaratogaHouses,scale = TRUE)
+summary(model)
+```
+
 
 \newpage
 \subsection{Analysis}
+
+\textbf{(Q2\_3) Which model seems to do better at achieving lower out-of-sample mean-squared error? Write a report on your findings as if you were describing your price-modeling strategies for a local taxing authority, who needs to form predicted market values for properties in order to know how much to tax them. Keep the main focus on the conclusions and model performance; any relevant technical details should be put in an appendix.}
 
 The best variables and cross-validation error for KNN is
 ```{r,echo=TRUE,message=FALSE}
@@ -299,59 +316,26 @@ Moreover,$\frac{58061.7-57828.05}{57828.05}=0.00404$, not very much.
 \newpage
 \section{Problem 3: Classification and retrospective sampling}
 
-Summary of the data.
-```{r,echo=FALSE,message=FALSE}
+There are 300 Default and 700 not Default in the data.
+
+As for history, good: 89 poor:618 terrible: 293.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 library(vcd)
 library(ggplot2)
 library(tidyverse)
-
-german_credit <- read.csv("data/german_credit.csv", stringsAsFactors=TRUE)
-summary(german_credit)
+german_credit <- read.csv("data/german_credit.csv",stringsAsFactors=TRUE)
 # Default：300 Not Default: 700
-```
-
-Count of the data.
-```{r,echo=FALSE,message=FALSE}
 counts <- table(german_credit$history)
-counts
 # good: 89 poor:618 terrible: 293
 ```
 
-\newpage
+\textbf{(Q3\_1) Make a bar plot of default probability by credit history}
+
 For categories poor and terrible we see the number of nodefault are greater than the number of default. For categories good we see the number of default is greater than the number of nodefault.
 ```{r fig 4,echo=FALSE,message=FALSE,fig.width=4,fig.height=4,fig.align = "center"}
 ggplot(german_credit, aes(history, ..count..)) +
   geom_bar(aes(fill = as.factor(Default)), position = "dodge")
-```
-
-Train and test split.
-```{r,echo=FALSE,message=FALSE}
-# sampling
-set.seed(1234)
-train <- sample(nrow(german_credit),0.7*nrow(german_credit))
-german_credittrain <- german_credit[train,]
-german_credittest <- german_credit[-train,]
-print("train_summary")
-table(german_credittrain$history)
-print("test_summary")
-table(german_credittest$history)
-```
-
-\newpage
-\textbf{(Q3\_1) Make a bar plot of default probability by credit history}
-
-```{r fig 5,echo=FALSE,message=FALSE,fig.width=4.5,fig.height=5,fig.align = "center"}
-credit.glm1 <- glm(Default ~ history, family = binomial, german_credittrain )
-DefaultProppoor <-  2.718281828459^(0.528-1.261*1) / (1+2.718281828459^(0.528-1.261*1))
-DefaultPropterrible <- 2.718281828459^(0.528-2.241*1) / (1+2.718281828459^(0.528-2.241*1))
-DefaultPropgood <- 1-(DefaultProppoor+DefaultPropterrible)
-DefaultProp<- c(DefaultPropterrible,DefaultProppoor,DefaultPropgood)
-history1<- c("terrible", "poor", "good")
-Defaulthistory<- data.frame(history1,DefaultProp)
-ggplot(Defaulthistory) +
-  geom_bar(stat='identity',aes(x=history1, y=DefaultProp), color='blue', alpha=0.1) +
-  labs(title="default probability by credit history", x="history1", y="DefaultProp")+
-theme(plot.title = element_text(hjust = 0.5))
 ```
 
 \newpage
@@ -360,46 +344,29 @@ theme(plot.title = element_text(hjust = 0.5))
 The summary of model is as follows.
 
 ```{r,echo=FALSE,message=FALSE}
-fit.logit <- glm( Default ~ duration + amount + installment + age + history + purpose + foreign, family = binomial(), data=german_credittrain)
-summary(fit.logit)
-coef(fit.logit)
-coef(fit.logit) %>% round (3)
-exp(coef(fit.logit))
+model <- glm( Default ~ duration + amount + installment + age + history + purpose + foreign, family = binomial(), data=german_credit)
+summary(model)
 ```
 
 \newpage
-\textbf{(Q3\_3) What do you notice about the history variable vis-a-vis predicting defaults? What do you think is going on here?}
+\textbf{(Q3\_3) What do you notice about the history variable vis-a-vis predicting defaults? What do you think is going on here? In light of what you see here, do you think this data set is appropriate for building a predictive model of defaults, if the purpose of the model is to screen prospective borrowers to classify them into "high" versus "low" probability of default? Why or why not---and if not, would you recommend any changes to the bank's sampling scheme?}
 
-According to the graph, the default probablitity will become higher as the borrower's credit rating is better.Because the bank matched each default with similar sets of loans that had not defaulted, including all reasonably close matches in the analysis.The sample of People with good credit is too small to lower the accuracy and they usually have fewer default samples. This resulted in a substantial oversampling of defaults
+\vspace{12pt}
+\textbf{What do you notice about the history variable vis-a-vis predicting defaults?}
 
+Based on the data, the default probability of people with good history is higher than the default probability of people with poor history. Not consistent with common sense! I don't think this variable work well in our model!(Although is significant)
 
-We use the confusion matrix to check out-of-sample performance
-```{r,echo=FALSE,message=FALSE}
-prob <- predict(fit.logit, german_credittest, type="response")
-logit.pred <- factor(prob > 0.5, levels=c(FALSE, TRUE),
-                    labels=c("Nodefault", "default"))
-logit.perf <- table(german_credittest$Default, logit.pred,
-                    dnn=c("Actual", "Predicted"))
-logit.perf
-```
-accuracy= (188+22)/300= 0.70
+\textbf{What do you think is going on here?}
 
-An example for predict default history by using the logistic model
-```{r,echo=FALSE,message=FALSE}
-german_credittest[1,]
-predictions_1st <- predict(fit.logit, newdata = german_credittest[1,], type = "response")
-predictions_1st
-```
+There is a serious sampling problem. Due to "case-control" design, the default probability of people with good history is higher than other people. The sample can't reflect the real-world.
 
-We could see that the defaulting probability for the 1st player in the test set is about 45.77%.
+\textbf{In light of what you see here, do you think this data set is appropriate for building a predictive model of defaults, if the purpose of the model is to screen prospective borrowers to classify them into "high" versus "low" probability of default?}
 
+This data set is NOT appropriate for building a predictive model of defaults. As the sample can't reflect the real-world.
 
-\newpage
-\textbf{(Q3\_4) In light of what you see here, do you think this data set is appropriate for building a predictive model of defaults, if the purpose of the model is to screen prospective borrowers to classify them into "high" versus "low" probability of default? Why or why not---and if not, would you recommend any changes to the bank's sampling scheme?}
+\textbf{Why or why not---and if not, would you recommend any changes to the bank's sampling scheme}
 
-I think this data set is not appropriate for building a predictive model for defaults. Because the bank attempted to match each default with similar sets of loans that had not defaulted, including all reasonably close matches in the analysis. This resulted in a substantial oversampling of defaults, relative to a random sample of loans in the bank's overall portfolio.
-
-The bank’s sample size should be as large as possible. The more closer to the overall conditions, the more accurate the predictive outcome is.
+I think the bank can just conduct random sampling of loans in the bank's overall portfolio. To solve unbalanced sample problem, the bank can change sample weight during modeling. Moreover, metrics like f1-score can be used to evaluate model performance.
 
 
 \newpage
@@ -414,15 +381,14 @@ library(lubridate)
 
 \subsection{Model building}
 
-\textbf{(Q4\_1)Compare the out-of-sample performance of the following models}
+\textbf{(Q4\_1)Using only the data in hotels.dev.csv, please compare the out-of-sample performance of the following models:}
 
-We first load the data.
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 library(plotROC)
 hotelsdev = read.csv("data/hotels_dev.csv",stringsAsFactors=TRUE)
 ```
 
-The mean f1-score from 5-fold cross-validation is applied to evaluate the performance of certain model.
+We first load the data. The mean f1-score from 5-fold cross-validation is applied to evaluate the performance of certain model.
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 evaluate_func = function(my_str,data){
   set.seed(100)
@@ -441,43 +407,26 @@ evaluate_func = function(my_str,data){
 ```
 
 \textbf{1 Baseline model 1}
-
-The summary of Baseline 1(fitting on the whole data set):
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 baseline_1_str = "children ~ market_segment + adults + customer_type + is_repeated_guest"
 model = glm(as.formula(baseline_1_str),data=hotelsdev,family = "binomial")
 prediction = predict(model,type = "response")
 truth = hotelsdev$children
-summary(model)
-```
-
-The f1-score of fitting
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
-f1Score(truth,prediction)
 ```
 The 5-fold cross-validation f1-score of Baseline 1:
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 print(evaluate_func(baseline_1_str,hotelsdev))
 ```
 
-\newpage
+\vspace{12pt}
 \textbf{2 Baseline model 2}
 
-The summary of Baseline 2(fitting on the whole data set):
+The 5-fold cross-validation f1-score of Baseline 2:
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 baseline_2_str = "children ~ (. - arrival_date)"
 model = glm(as.formula(baseline_2_str),data=hotelsdev,family = "binomial")
 prediction = predict(model,type = "response")
 truth = hotelsdev$children
-summary(model)
-```
-
-The f1-score of fitting
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
-f1Score(truth,prediction)
-```
-The 5-fold cross-validation f1-score of Baseline 2:
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
 print(evaluate_func(baseline_2_str,hotelsdev))
 ```
 
@@ -488,13 +437,13 @@ We generate the time-stamp of year, month, day, and day of week from arrival_dat
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 hotelsdev = mutate(hotelsdev,
                    arrival_date = ymd(arrival_date))
-hotelsdev = mutate(hotelsdev, 
-                   wday = wday(arrival_date) %>% factor(), 
+hotelsdev = mutate(hotelsdev,
+                   wday = wday(arrival_date) %>% factor(),
                    day = day(arrival_date) %>% factor(),
                    month = month(arrival_date) %>% factor(),
                    year = year(arrival_date))
 hotelsdev$arrival_date = as.character(hotelsdev$arrival_date)
-hotelsdev <- subset(hotelsdev, select = -c(arrival_date)) 
+hotelsdev <- subset(hotelsdev, select = -c(arrival_date))
 ```
 
 Then, we use greedy algorithm to find the best feature combination.
@@ -507,7 +456,7 @@ Then, we use greedy algorithm to find the best feature combination.
 # best_test_str = ""
 # best_record_previous = 0
 # result_collect = c()
-# 
+#
 # while(TRUE){
 #   for (name in x_names){
 #     if (count == 0){
@@ -541,35 +490,18 @@ Then, we use greedy algorithm to find the best feature combination.
 #     break
 #   }
 # }
-print("children~reserved_room_type")                                          
-print("0.364107552305935")                                                    
-print("children~reserved_room_type+hotel")                                     
-print("0.506343075649843")                                                    
-print("children~reserved_room_type+hotel+previous_cancellations")              
-print("0.506437707712283")                                                     
-print("children~reserved_room_type+hotel+previous_cancellations+booking_changes")  
-print("0.506463838208211")  
 ```
 
 The best feature combination is (cross-validation f1-score 0.50646)
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
-print("children~reserved_room_type+hotel+previous_cancellations+booking_changes")  
+print("children~reserved_room_type+hotel+previous_cancellations+booking_changes")
 ```
-
-The summary of best model:
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 best_str = "children~reserved_room_type+hotel+previous_cancellations+booking_changes"
 model = glm(as.formula(best_str),data=hotelsdev,family = "binomial")
-summary(model)
 prediction = predict(model,type = "response")
 truth = hotelsdev$children
 ```
-
-The f1-score of fitting
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
-f1Score(truth,prediction)
-```
-
 The 5-fold cross-validation f1-score of best model:
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 print(evaluate_func(best_str,hotelsdev))
@@ -586,7 +518,7 @@ Baseline1 model 2: 0.4642258
 
 Best model: 0.5064638
 
-The best model is the best model with the highest f1-score.
+The best model has the highest f1-score.
 
 \newpage
 \subsection{Model validation: step 1}
@@ -605,16 +537,16 @@ prediction = predict(model,newdata = hotelsval,type = "response")
 truth = hotelsval$children
 roc_data = cbind(truth,prediction)
 roc_data = data.frame(roc_data)
-basicplot <- ggplot(roc_data, aes(d = truth,m = prediction))+ geom_roc() 
+basicplot <- ggplot(roc_data, aes(d = truth,m = prediction))+ geom_roc()
 ```
 
 The plot is as follows:
 ```{r fig21,echo=FALSE,message=FALSE,fig.width=3.5,fig.height=4,fig.align = "center"}
-advanced_plot = basicplot + 
+advanced_plot = basicplot +
   style_roc(theme = theme_grey) +
-  theme(axis.text = element_text(colour = "blue"),plot.title = element_text(hjust = 0.5))+ 
+  theme(axis.text = element_text(colour = "blue"),plot.title = element_text(hjust = 0.5))+
   annotate("text", x = .75, y = .25,label = paste("AUC =", round(calc_auc(basicplot)$AUC, 2))) +
-  scale_x_continuous("1 - Specificity", breaks = seq(0, 1, by = .1))
+  scale_x_continuous("FPR", breaks = seq(0, 1, by = .1))
 advanced_plot
 ```
 
@@ -638,24 +570,24 @@ err_result = c()
 for (i in 1:20){
   slice_data = hotelsval[indexs[[i]],]
   prediction = predict(model,newdata = slice_data,type = "response")
-  predict_num = round(mean(prediction)*dim(slice_data)[1])
+  predict_num = mean(prediction)*dim(slice_data)[1]
   ### expected number of bookings with children for that fold.
   actual_num = sum(slice_data$children)
   err_result = rbind(err_result,c(actual_num,predict_num))
-} 
+}
 ```
 The following is the summary of expected number of bookings with children for that fold and actual number for that fold.
 ```{r,echo=FALSE,message=FALSE,warning=FALSE}
 err_result = data.frame(err_result)
-colnames(err_result)=c("actual_num","predict_num") 
+colnames(err_result)=c("actual_num","predict_num")
 err_result$difference = err_result$predict_num-err_result$actual_num
 print(err_result)
 ```
 
 The following figure demonstrates the distribution of difference beween actual number and expected number among 20 folds.
 ```{r fig22,echo=FALSE,message=FALSE,fig.width=2.5,fig.height=3,fig.align = "center"}
-p0 = ggplot(data=err_result) + 
-  geom_histogram(aes(x=difference)) 
+p0 = ggplot(data=err_result) +
+  geom_histogram(aes(x=difference))
 p0
 ```
 
