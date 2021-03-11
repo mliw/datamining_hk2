@@ -64,7 +64,9 @@ print(data_summary[1:5,])
 \subsection{line graphs}
 \textbf{(Q1\_1\_1) One panel of line graphs that plots average boardings grouped by hour of the day, day of week, and month. You should facet by day of week. Each facet should include three lines, one for each month, colored differently and with colors labeled with a legend. Give the figure an informative caption in which you explain what is shown in the figure}
 
-```{r fig1,echo=FALSE,message=FALSE,fig.width=7.5,fig.height=9,fig.align = "center"}
+Caption: Average boardings grouped by hour of the day, day of week, and month. The graph is facet by day of week. The three lines in each facet stand for different months.
+
+```{r fig1,echo=FALSE,message=FALSE,fig.width=5.5,fig.height=7,fig.align = "center"}
 data_summary$month = factor(data_summary$month)
 p0 = ggplot(data=data_summary,aes(x=hour,y=mean_boarding,group=month,color=month))+ geom_line()+facet_wrap(~day_of_week, nrow=4)+ggtitle("Mean Boarding in different time intervals")+theme(plot.title = element_text(hjust = 0.5))
 p0
@@ -102,6 +104,8 @@ transform_func = function(num){
 data$is_weekend_indicator = apply(array(data$is_weekend),1,transform_func)
 ```
 \textbf{(Q1\_2\_1) One panel of scatter plots showing boardings (y) vs. temperature (x) in each 15-minute window, faceted by hour of the day, and with points colored in according to whether it is a weekday or weekend. Give the figure an informative caption in which you explain what is shown in the figure.}
+
+Caption: Scatter plots showing boardings (y) vs. temperature (x) in each 15-minute window, faceted by hour of the day. Points are colored in according to whether it is a weekday or weekend.
 
 ```{r fig2,echo=FALSE,message=FALSE,fig.width=7.5,fig.height=8,fig.align = "center"}
 p0 = ggplot(data=data,aes(x=temperature,y=boarding,color=is_weekend_indicator))+
@@ -332,10 +336,12 @@ counts <- table(german_credit$history)
 
 \textbf{(Q3\_1) Make a bar plot of default probability by credit history}
 
-For categories poor and terrible we see the number of nodefault are greater than the number of default. For categories good we see the number of default is greater than the number of nodefault.
 ```{r fig 4,echo=FALSE,message=FALSE,fig.width=4,fig.height=4,fig.align = "center"}
-ggplot(german_credit, aes(history, ..count..)) +
-  geom_bar(aes(fill = as.factor(Default)), position = "dodge")
+data_summary = german_credit %>%
+  group_by(history) %>%
+  summarize(mean_default=mean(Default))
+p0 = ggplot(data_summary,aes(x=history,y=mean_default))+geom_col()
+p0
 ```
 
 \newpage
